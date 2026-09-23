@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administration — Pro Service International</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{--bd:#dde4ee;--mut:#5b6478;--blue:#1f56a5}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Barlow","Segoe UI",Arial,sans-serif;background:#f5f7fb;color:#22293a}
+header.top{background:#fff;border-bottom:1px solid var(--bd);padding:14px 20px;display:flex;gap:12px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+h1{font-size:18px;margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding:20px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.tabs button{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit}
+.tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff}
+textarea{min-height:80px}
+button.primary{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
+button.ghost{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.media{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fff}
+.media img,.media video{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#eef2f8}
+.msg{position:fixed;right:16px;bottom:16px;background:#22293a;color:#fff;padding:10px 14px;border-radius:8px;display:none}
+.login{max-width:360px;margin:12vh auto;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:24px}
+small.hint{color:var(--mut)}
+</style>
+</head>
+<body>
+<div id="login" class="login">
+  <h1>Administration PSI</h1>
+  <p><small class="hint">Console reliée à https://id-preview--746324d7-7994-4c32-95b2-cbbc1fdf6e87.lovable.app</small></p>
+  <label>Adresse e-mail</label>
+  <input id="em" type="email">
+  <label>Mot de passe</label>
+  <input id="pw" type="password">
+  <p id="loginErr" style="color:#c0392b;font-size:13px"></p>
+  <button class="primary" id="loginBtn" style="width:100%">Se connecter</button>
+</div>
+
+<div id="app" style="display:none">
+<header class="top"><h1>Administration PSI</h1><button class="ghost" onclick="location.reload()">Quitter</button></header>
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</div>
+</div>
+<div class="msg" id="msg"></div>
+
+<script>
+var API="https://id-preview--746324d7-7994-4c32-95b2-cbbc1fdf6e87.lovable.app"+"/api/public/console";
+var MEDIA="https://id-preview--746324d7-7994-4c32-95b2-cbbc1fdf6e87.lovable.app"+"/api/public/media/";
+var SLOTS={"logo":{"label":"Logo du site","section":"Identité"},"group":{"label":"Photo d'équipe","section":"Identité"},"banner1":{"label":"Bannière principale","section":"Bannières"},"banner2":{"label":"Bannière secondaire","section":"Bannières"},"affiche":{"label":"Affiche des formations","section":"Affiches & panneaux"},"enginspanel":{"label":"Panneau des engins","section":"Affiches & panneaux"},"coach1":{"label":"Formateur encadrant","section":"Équipe & formateurs"},"coach2":{"label":"Formatrice encadrante","section":"Équipe & formateurs"},"chantier":{"label":"Galerie chantier","section":"Chantier & terrain"},"climb":{"label":"Travail en hauteur","section":"Chantier & terrain"},"theorie1":{"label":"Formation théorique 1","section":"Formations théoriques"},"theorie2":{"label":"Formation théorique 2","section":"Formations théoriques"},"theorie3":{"label":"Formation théorique 3","section":"Formations théoriques"},"theorie4":{"label":"Formation théorique 4","section":"Formations théoriques"},"theorie5":{"label":"Formation théorique 5","section":"Formations théoriques"},"excavator":{"label":"Pelle hydraulique 1","section":"Engins de chantier"},"excavator2":{"label":"Pelle hydraulique 2","section":"Engins de chantier"},"excavator3":{"label":"Pelle hydraulique 3","section":"Engins de chantier"},"backhoe":{"label":"Tractopelle 1","section":"Engins de chantier"},"backhoe2":{"label":"Tractopelle 2","section":"Engins de chantier"},"loader2":{"label":"Chargeuse","section":"Engins de chantier"},"crane":{"label":"Grue à tour","section":"Engins de chantier"},"crane2":{"label":"Grue mobile","section":"Engins de chantier"},"dumptruck":{"label":"Camion benne","section":"Engins de chantier"},"grader":{"label":"Niveleuse","section":"Engins de chantier"},"forklift2":{"label":"Chariot élévateur","section":"Engins de chantier"},"telehandler":{"label":"Chariot télescopique","section":"Engins de chantier"},"roller":{"label":"Compacteur","section":"Engins de chantier"}};
+var SLOT_PAGES={"excavator":["Accueil","Formations & services","Recrutement / placement"],"coach1":["Accueil","Formations & services","Recrutement / placement"],"theorie1":["Accueil"],"climb":["Accueil","Formations & services"],"enginspanel":["Accueil","Formations & services","Recrutement / placement","Contact"],"theorie4":["Accueil","Formations & services"],"coach2":["Accueil","Formations & services","Recrutement / placement"],"chantier":["Accueil","Formations & services","Recrutement / placement","Contact"],"affiche":["Accueil","Formations & services","Contact"],"banner1":["Accueil","Formations & services","Recrutement / placement","Contact"],"backhoe":["Formations & services"],"excavator2":["Formations & services"],"loader2":["Formations & services"],"crane":["Formations & services"],"dumptruck":["Formations & services"],"excavator3":["Formations & services"],"grader":["Formations & services"],"forklift2":["Formations & services"],"telehandler":["Formations & services"],"roller":["Formations & services"],"crane2":["Formations & services"],"backhoe2":["Formations & services"],"banner2":["Formations & services"],"theorie3":["Formations & services"],"theorie5":["Formations & services"],"theorie2":["Formations & services"]};
+var SECTIONS=["Identité","Bannières","Affiches & panneaux","Équipe & formateurs","Chantier & terrain","Formations théoriques","Engins de chantier","Autres"];
+var pw="",em="",site=null,admins=[],meId="",tab="contacts";
+var esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");};
+function toast(m){var e=document.getElementById('msg');e.textContent=m;e.style.display='block';setTimeout(function(){e.style.display='none';},2200);}
+async function call(action,data){
+  var r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:em,password:pw,action:action,data:data||{}})});
+  var j=await r.json().catch(function(){return {ok:false,message:'Erreur réseau'};});
+  return j;
+}
+document.getElementById('loginBtn').onclick=async function(){
+  em=document.getElementById('em').value;
+  pw=document.getElementById('pw').value;
+  var r=await call('login');
+  if(!r.ok){document.getElementById('loginErr').textContent=r.message||'E-mail ou mot de passe incorrect.';return;}
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  await load();
+};
+document.getElementById('em').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click();});
+document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click();});
+
+async function load(){ site=await call('site'); var a=await call('listAdmins'); admins=a.admins||[]; meId=a.currentId||''; render(); }
+
+var TABS=[["contacts","Coordonnées & couleurs"],["textes","Textes"],["medias","Médiathèque"],["pages","Pages"],["admins","Administrateurs"],["compte","Mot de passe"]];
+function render(){
+  document.getElementById('tabs').innerHTML=TABS.map(function(t){return '<button class="'+(t[0]===tab?'on':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
+  document.querySelectorAll('#tabs button').forEach(function(b){b.onclick=function(){tab=b.getAttribute('data-tab');render();};});
+  var v=document.getElementById('view');
+  if(tab==='contacts') v.innerHTML=settingsView();
+  if(tab==='textes') v.innerHTML=textsView();
+  if(tab==='medias') v.innerHTML=mediaView();
+  if(tab==='pages') v.innerHTML=pagesView();
+  if(tab==='admins') v.innerHTML=adminsView();
+  if(tab==='compte') v.innerHTML='<div class="card"><label>Nouveau mot de passe</label><input id="np" type="password"><p><button class="primary" id="npBtn">Enregistrer</button></p></div>';
+  bind();
+}
+function settingsMap(){var m={};(site.settings||[]).forEach(function(r){m[r.key]=r.value;});return m;}
+function settingsView(){
+  var m=settingsMap();
+  var keys=Object.keys(m).sort();
+  return '<div class="card"><h3>Réglages du site</h3><div class="grid">'+keys.map(function(k){
+    var isColor=/^color_/.test(k);
+    return '<div><label>'+esc(k)+'</label><input data-set="'+esc(k)+'" '+(isColor?'type="color"':'')+' value="'+esc(m[k])+'"></div>';
+  }).join('')+'</div><p><button class="primary" id="saveSet">Enregistrer</button></p></div>';
+}
+function textsView(){
+  var t=(site.texts||[]).slice().sort(function(a,b){return a.tkey<b.tkey?-1:1;});
+  return '<div class="card"><h3>Textes personnalisés</h3><p><small class="hint">Les textes non modifiés gardent le contenu d\'origine du site.</small></p>'+
+    t.map(function(r){return '<label>'+esc(r.tkey)+'</label><textarea data-text="'+esc(r.tkey)+'">'+esc(r.value)+'</textarea>';}).join('')+
+    '<p><button class="primary" id="saveTxt">Enregistrer</button></p></div>';
+}
+function mediaName(m){ return m.title || (m.mkey? (SLOTS[m.mkey]? SLOTS[m.mkey].label : m.mkey) : m.path.split('/').pop()); }
+function mediaCard(m){
+  var url=MEDIA+m.path;
+  var pages=(m.mkey&&SLOT_PAGES[m.mkey])?SLOT_PAGES[m.mkey].join(', '):'';
+  return '<div class="media">'+(m.kind==='video'?'<video src="'+url+'" muted loop playsinline controls></video>':'<img src="'+url+'" alt="">')+
+   '<p style="margin:8px 0 2px"><b>'+esc(mediaName(m))+'</b></p>'+
+   '<small class="hint">'+(pages?'Pages : '+esc(pages):(m.mkey?'Présent sur tout le site':'Média ajouté'))+(m.kind==='video'?' • vidéo':'')+'</small>'+
+   '<label>Titre</label><input data-mt="'+m.id+'" value="'+esc(m.title)+'">'+
+   '<label>Sous-titre</label><input data-ms="'+m.id+'" value="'+esc(m.subtitle)+'">'+
+   '<p><button class="primary" data-mrep="'+(m.mkey||'')+'" data-mid="'+m.id+'" style="width:100%">Remplacer par une image ou vidéo</button></p>'+
+   '<p><button class="ghost" data-msave="'+m.id+'">Enregistrer</button>'+
+   (m.mkey?'':' <button class="ghost" data-mdel="'+m.id+'">Supprimer</button>')+'</p></div>';
+}
+function mediaView(){
+  var all=site.media||[];
+  var extras=all.filter(function(m){return !m.mkey;});
+  var html='<div class="card"><h3>Ajouter un média</h3><label>Fichier (image JPG/PNG ou vidéo MP4/WebM)</label><input type="file" id="newFile" accept="image/*,video/mp4,video/webm,video/*">'+
+   '<label>Titre</label><input id="newTitle"><label>Sous-titre</label><input id="newSub">'+
+   '<p><button class="primary" id="addMedia">Téléverser</button></p>'+
+   '<small class="hint">Les médias ajoutés peuvent être insérés dans vos pages depuis l\'onglet « Pages ».</small></div>';
+  html+='<div class="card"><h3>Médias ajoutés</h3>'+(extras.length?'<div class="grid">'+extras.map(mediaCard).join('')+'</div>':'<p><small class="hint">Aucun média ajouté.</small></p>')+'</div>';
+  SECTIONS.forEach(function(sec){
+    var items=all.filter(function(m){return m.mkey && (SLOTS[m.mkey]?SLOTS[m.mkey].section:'Autres')===sec;});
+    if(!items.length) return;
+    items.sort(function(a,b){return mediaName(a)<mediaName(b)?-1:1;});
+    html+='<div class="card"><h3>'+esc(sec)+'</h3><div class="grid">'+items.map(mediaCard).join('')+'</div></div>';
+  });
+  return html;
+}
+function adminsView(){
+  var html='<div class="card"><h3>Ajouter un administrateur</h3><label>Adresse e-mail</label><input id="naEmail" type="email">'+
+   '<label>Mot de passe (6 caractères minimum)</label><input id="naPwd">'+
+   '<p><button class="primary" id="naAdd">Ajouter</button></p></div>';
+  html+='<div class="card"><h3>Administrateurs existants</h3>'+(admins.length?admins.map(function(a){
+    return '<div data-adm="'+a.id+'" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px">'+
+      '<label>Adresse e-mail'+(a.id===meId?' (vous)':'')+'</label><input data-ae value="'+esc(a.email)+'">'+
+      '<label>Nouveau mot de passe (laisser vide pour ne pas changer)</label><input data-ap value="">'+
+      '<p><button class="primary" data-asave="'+a.id+'">Enregistrer</button> '+
+      '<button class="ghost" data-adel="'+a.id+'">Supprimer</button></p></div>';
+  }).join(''):'<p><small class="hint">Chargement…</small></p>')+'</div>';
+  return html;
+}
+function pagesView(){
+  return '<div class="card"><h3>Nouvelle page</h3>'+pageForm({})+'</div>'+
+    (site.pages||[]).map(function(p){return '<div class="card">'+pageForm(p)+'</div>';}).join('');
+}
+function pageForm(p){
+  var id=p.id||'';
+  return '<div data-page="'+id+'">'+
+    '<label>Nom dans le menu</label><input data-f="label" value="'+esc(p.label)+'">'+
+    '<label>Adresse (facultatif)</label><input data-f="slug" value="'+esc(p.slug)+'">'+
+    '<label>Titre</label><input data-f="title" value="'+esc(p.title)+'">'+
+    '<label>Introduction</label><textarea data-f="intro">'+esc(p.intro)+'</textarea>'+
+    '<label>Contenu</label><textarea data-f="body" style="min-height:160px">'+esc(p.body)+'</textarea>'+
+    '<label>Insérer une image ou une vidéo dans le contenu</label><p>'+(site.media||[]).map(function(m){
+      return '<button class="ghost" data-ins="'+m.id+'">'+(m.kind==='video'?'🎬 ':'🖼 ')+esc(mediaName(m))+'</button> ';
+    }).join('')+'</p>'+
+    '<label>Média d\'en-tête</label><select data-f="image_key"><option value="">Aucun</option>'+
+      (site.media||[]).map(function(m){var v=m.mkey||m.id;
+        return '<option value="'+esc(v)+'"'+((p.image_key||'')===v?' selected':'')+'>'+esc(mediaName(m))+(m.kind==='video'?' (vidéo)':'')+'</option>';}).join('')+
+    '</select>'+
+    '<label>Position dans le menu</label><input data-f="position" type="number" value="'+(p.position==null?100:p.position)+'">'+
+    '<label><input data-f="visible" type="checkbox" style="width:auto" '+(p.visible===false?'':'checked')+'> Visible</label>'+
+    '<p><button class="primary" data-psave="'+id+'">Enregistrer</button> '+(id?'<button class="ghost" data-pdel="'+id+'">Supprimer</button>':'')+'</p></div>';
+}
+function fileToB64(f){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(String(r.result).split(',')[1]);};r.readAsDataURL(f);});}
+function bindInsert(){
+  document.querySelectorAll('[data-ins]').forEach(function(b){b.onclick=function(){
+    var ta=b.closest('[data-page]').querySelector('[data-f="body"]');
+    ta.value=ta.value.replace(/\s*$/,'')+'\n\n[[media:'+b.getAttribute('data-ins')+']]\n\n';
+    toast('Média inséré — pensez à enregistrer.');};});
+}
+function bind(){
+  var s=document.getElementById('saveSet');
+  if(s) s.onclick=async function(){var e={};document.querySelectorAll('[data-set]').forEach(function(i){e[i.getAttribute('data-set')]=i.value;});
+    var r=await call('saveSettings',{entries:e});toast(r.ok?'Enregistré':(r.message||'Erreur'));await load();};
+  var t=document.getElementById('saveTxt');
+  if(t) t.onclick=async function(){var e={};document.querySelectorAll('[data-text]').forEach(function(i){e[i.getAttribute('data-text')]=i.value;});
+    var r=await call('saveTexts',{entries:e});toast(r.ok?'Enregistré':(r.message||'Erreur'));};
+  var np=document.getElementById('npBtn');
+  if(np) np.onclick=async function(){var r=await call('changePassword',{next:document.getElementById('np').value});
+    if(r.ok){pw=document.getElementById('np').value;toast('Mot de passe modifié');}else toast(r.message||'Erreur');};
+  var na=document.getElementById('naAdd');
+  if(na) na.onclick=async function(){
+    var r=await call('saveAdmin',{email:document.getElementById('naEmail').value,password:document.getElementById('naPwd').value});
+    toast(r.ok?'Administrateur ajouté':(r.message||'Erreur')); if(r.ok) await load();};
+  document.querySelectorAll('[data-asave]').forEach(function(b){b.onclick=async function(){
+    var box=b.closest('[data-adm]');
+    var r=await call('saveAdmin',{id:b.getAttribute('data-asave'),email:box.querySelector('[data-ae]').value,password:box.querySelector('[data-ap]').value});
+    toast(r.ok?'Administrateur mis à jour':(r.message||'Erreur')); if(r.ok) await load();};});
+  document.querySelectorAll('[data-adel]').forEach(function(b){b.onclick=async function(){
+    if(!confirm('Supprimer cet administrateur ?'))return;
+    var r=await call('deleteAdmin',{id:b.getAttribute('data-adel')});
+    toast(r.ok?'Administrateur supprimé':(r.message||'Erreur')); if(r.ok) await load();};});
+  var am=document.getElementById('addMedia');
+  if(am) am.onclick=async function(){
+    var f=document.getElementById('newFile').files[0]; if(!f){toast('Choisissez un fichier');return;}
+    toast('Téléversement…');
+    var r=await call('upload',{filename:f.name,base64:await fileToB64(f),contentType:f.type,kind:f.type.indexOf('video')===0?'video':'image',
+      title:document.getElementById('newTitle').value,subtitle:document.getElementById('newSub').value});
+    toast(r.ok?'Média ajouté':(r.message||'Erreur'));await load();};
+  document.querySelectorAll('[data-msave]').forEach(function(b){b.onclick=async function(){
+    var id=b.getAttribute('data-msave');
+    var r=await call('saveMedia',{id:id,title:document.querySelector('[data-mt="'+id+'"]').value,subtitle:document.querySelector('[data-ms="'+id+'"]').value});
+    toast(r.ok?'Enregistré':(r.message||'Erreur'));};});
+  document.querySelectorAll('[data-mdel]').forEach(function(b){b.onclick=async function(){
+    if(!confirm('Supprimer ce média ?'))return;var r=await call('deleteMedia',{id:b.getAttribute('data-mdel')});
+    toast(r.ok?'Supprimé':(r.message||'Erreur'));await load();};});
+  document.querySelectorAll('[data-mrep]').forEach(function(b){b.onclick=function(){
+    var inp=document.createElement('input');inp.type='file';inp.accept='image/*,video/mp4,video/webm,video/*';
+    inp.onchange=async function(){var f=inp.files[0];if(!f)return;toast('Téléversement…');
+      var mkey=b.getAttribute('data-mrep');
+      var isVid=f.type.indexOf('video')===0;
+      var r=await call('upload',{filename:f.name,base64:await fileToB64(f),contentType:f.type,kind:isVid?'video':'image',
+        mkey:mkey||null,mediaId:mkey?null:b.getAttribute('data-mid')});
+      toast(r.ok?(isVid?'Vidéo publiée':'Image remplacée'):(r.message||'Erreur'));await load();};
+    inp.click();};});
+  document.querySelectorAll('[data-psave]').forEach(function(b){b.onclick=async function(){
+    var box=b.closest('[data-page]');var p={};
+    box.querySelectorAll('[data-f]').forEach(function(i){var k=i.getAttribute('data-f');
+      p[k]= i.type==='checkbox'? i.checked : (k==='position'? Number(i.value||100) : i.value);});
+    if(box.getAttribute('data-page')) p.id=box.getAttribute('data-page');
+    if(!p.slug) p.slug=p.label;
+    p.image_key=p.image_key||null;
+    var r=await call('savePage',{page:p});toast(r.ok?'Page enregistrée':(r.message||'Erreur'));await load();};});
+  document.querySelectorAll('[data-pdel]').forEach(function(b){b.onclick=async function(){
+    if(!confirm('Supprimer cette page ?'))return;var r=await call('deletePage',{id:b.getAttribute('data-pdel')});
+    toast(r.ok?'Page supprimée':(r.message||'Erreur'));await load();};});
+  bindInsert();
+}
+</script>
+</body>
+</html>
